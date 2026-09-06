@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Registration Successful{% endblock %}
+
+{% block content %}
+
+<h1>Registration Successful!</h1>
+
+<p>
+    Thank you, {{ registration.name }}.
+    Your medical camp registration has been submitted successfully.
+</p>
+
+<p>
+    Registration ID:
+    <strong>{{ registration.id }}</strong>
+</p>
+
+<a href="/camps">View Medical Camps</a>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Add Medical Camp{% endblock %}
+
+{% block content %}
+
+<h1>Add New Medical Camp</h1>
+
+<form method="post" action="/admin/camps/new">
+
+    <div>
+        <label for="name">Camp Name</label>
+        <input
+            type="text"
+            id="name"
+            name="name"
+            maxlength="150"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="date">Date</label>
+        <input
+            type="date"
+            id="date"
+            name="date"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="location">Location</label>
+        <input
+            type="text"
+            id="location"
+            name="location"
+            maxlength="200"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="description">Description</label>
+        <textarea
+            id="description"
+            name="description"
+            rows="4"
+        ></textarea>
+    </div>
+
+    <div>
+        <label for="available_slots">Available Slots</label>
+        <input
+            type="number"
+            id="available_slots"
+            name="available_slots"
+            min="1"
+            required
+        >
+    </div>
+
+    <button type="submit">Create Camp</button>
+
+</form>
+
+<p>
+    <a href="/admin/camps">Back to Manage Camps</a>
+</p>
+
+{% endblock %}

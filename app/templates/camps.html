@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Camps{% endblock %}
+
+{% block content %}
+
+<h1>Available Medical Camps</h1>
+
+{% if camps %}
+
+    <div class="camp-grid">
+
+        {% for camp in camps %}
+
+            <article class="camp-card">
+
+                <h2>{{ camp.name }}</h2>
+
+                <p>
+                    <strong>Date:</strong>
+                    {{ camp.date }}
+                </p>
+
+                <p>
+                    <strong>Location:</strong>
+                    {{ camp.location }}
+                </p>
+
+                <p>{{ camp.description }}</p>
+
+                <p>
+                    <strong>Available Slots:</strong>
+                    {{ camp.available_slots }}
+                </p>
+
+                <a
+                    class="button"
+                    href="/registration?camp_id={{ camp.id }}"
+                >
+                    Register for This Camp
+                </a>
+
+            </article>
+
+        {% endfor %}
+
+    </div>
+
+{% else %}
+
+    <p>No medical camps are currently available.</p>
+
+{% endif %}
+
+{% endblock %}

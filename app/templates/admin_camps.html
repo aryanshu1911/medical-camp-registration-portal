@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Camps{% endblock %}
+
+{% block content %}
+
+<h1>Manage Medical Camps</h1>
+
+<p>
+    <a class="button" href="/admin/camps/new">
+        Add New Camp
+    </a>
+</p>
+
+{% if camps %}
+
+<div class="table-container">
+
+    <table class="registrations-table">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Camp Name</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Available Slots</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for camp in camps %}
+
+            <tr>
+
+                <td>{{ camp.id }}</td>
+
+                <td>{{ camp.name }}</td>
+
+                <td>{{ camp.date }}</td>
+
+                <td>{{ camp.location }}</td>
+
+                <td>{{ camp.available_slots }}</td>
+
+                <td>
+                    <span class="status-badge status-{{ camp.status }}">
+                        {{ camp.status|capitalize }}
+                    </span>
+                </td>
+
+                <td class="action-buttons">
+
+                    <a
+                        class="edit-button"
+                        href="/admin/camps/{{ camp.id }}/edit"
+                    >
+                        Edit
+                    </a>
+
+                    {% if camp.status == "scheduled" %}
+
+                    <form
+                        method="post"
+                        action="/admin/camps/{{ camp.id }}/status"
+                    >
+                        <input
+                            type="hidden"
+                            name="status"
+                            value="cancelled"
+                        >
+                        <button
+                            type="submit"
+                            class="delete-button"
+                            onclick="return confirm('Cancel this medical camp?');"
+                        >
+                            Cancel
+                        </button>
+                    </form>
+
+                    {% elif camp.status == "cancelled" %}
+
+                    <form
+                        method="post"
+                        action="/admin/camps/{{ camp.id }}/status"
+                    >
+                        <input
+                            type="hidden"
+                            name="status"
+                            value="scheduled"
+                        >
+                        <button
+                            type="submit"
+                            class="edit-button"
+                        >
+                            Reopen
+                        </button>
+                    </form>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% else %}
+
+<p>No medical camps are currently available.</p>
+
+{% endif %}
+
+{% endblock %}

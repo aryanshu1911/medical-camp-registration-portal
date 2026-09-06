@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Registered Participants{% endblock %}
+
+{% block content %}
+
+<h1>Registered Participants</h1>
+
+{% if registrations %}
+
+    <div class="table-container">
+
+    <table class="registrations-table">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Participant</th>
+                <th>Age</th>
+                <th>Contact</th>
+                <th>Medical Camp</th>
+                <th>Location</th>
+                <th>Registered At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for registration in registrations %}
+
+                <tr>
+                    <td class="id-cell">
+                        {{ registration.id }}
+                    </td>
+
+                    <td class="name-cell">
+                        {{ registration.name }}
+                    </td>
+
+                    <td>
+                        {{ registration.age }}
+                    </td>
+
+                    <td class="contact-cell">
+                        {{ registration.contact_number }}
+                    </td>
+
+                    <td class="camp-cell">
+                        {{ registration.camp.name }}
+                    </td>
+
+                    <td>
+                        {{ registration.camp.location }}
+                    </td>
+
+                    <td class="date-cell">
+                        {{ registration.registered_at.strftime("%d %b %Y, %I:%M %p") }}
+                    </td>
+
+                    <td class="actions">
+
+                        <a
+                            class="edit-button"
+                            href="/admin/registrations/{{ registration.id }}/edit"
+                        >
+                            Edit
+                        </a>
+
+                        <form
+                            method="post"
+                            action="/admin/registrations/{{ registration.id }}/delete"
+                            onsubmit="return confirm('Are you sure you want to delete this registration?');"
+                        >
+                            <button
+                                type="submit"
+                                class="delete-button"
+                            >
+                                Delete
+                            </button>
+                        </form>
+
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% else %}
+
+    <p>No registrations found.</p>
+
+{% endif %}
+
+{% endblock %}

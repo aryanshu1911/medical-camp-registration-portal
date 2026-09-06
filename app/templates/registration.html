@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Registration{% endblock %}
+
+{% block content %}
+
+<h1>Register for a Medical Camp</h1>
+
+{% if error %}
+    <p><strong>{{ error }}</strong></p>
+{% endif %}
+
+<form method="post" action="/registration">
+
+    <div>
+        <label for="name">Full Name</label>
+        <input
+            type="text"
+            id="name"
+            name="name"
+            value="{{ form_data.get('name', '') }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="age">Age</label>
+        <input
+           type="number"
+            id="age"
+            name="age"
+            min="1"
+            max="120"
+            value="{{ form_data.get('age', '') }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="contact_number">Contact Number</label>
+        <input
+            type="tel"
+            id="contact_number"
+            name="contact_number"
+            value="{{ form_data.get('contact_number', '') }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="camp_id">Select Medical Camp</label>
+
+        <select id="camp_id" name="camp_id" required>
+
+        <option value="">-- Select a camp --</option>
+
+            {% for camp in camps %}
+                <option
+                    value="{{ camp.id }}"
+                    {% if form_data.get('camp_id') == camp.id %}selected{% endif %}
+                >
+                    {{ camp.name }} - {{ camp.date }}
+                </option>
+            {% endfor %}
+
+        </select>
+    </div>
+
+    <button type="submit">Register</button>
+
+</form>
+
+{% endblock %}

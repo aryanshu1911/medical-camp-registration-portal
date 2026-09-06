@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Registration{% endblock %}
+
+{% block content %}
+
+<h1>Edit Registration</h1>
+
+<form
+    method="post"
+    action="/admin/registrations/{{ registration.id }}/edit"
+>
+
+    <div>
+        <label for="name">Full Name</label>
+        <input
+            type="text"
+            id="name"
+            name="name"
+            value="{{ registration.name }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="age">Age</label>
+        <input
+            type="number"
+            id="age"
+            name="age"
+            min="1"
+            max="120"
+            value="{{ registration.age }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="contact_number">Contact Number</label>
+        <input
+            type="tel"
+            id="contact_number"
+            name="contact_number"
+            value="{{ registration.contact_number }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="camp_id">Medical Camp</label>
+
+        <select id="camp_id" name="camp_id" required>
+
+            {% for camp in camps %}
+                <option
+                    value="{{ camp.id }}"
+                    {% if registration.camp_id == camp.id %}selected{% endif %}
+                >
+                    {{ camp.name }} - {{ camp.date }}
+                </option>
+            {% endfor %}
+
+        </select>
+    </div>
+
+    <button type="submit">Save Changes</button>
+
+</form>
+
+<p>
+    <a href="/admin/registrations">Cancel</a>
+</p>
+
+{% endblock %}
