@@ -32,39 +32,39 @@
     <table class="registrations-table camp-management-table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Camp Name</th>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Registered</th>
-                <th>Available Slots</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th class="id-cell">ID</th>
+                <th class="name-cell">Camp Name</th>
+                <th class="date-cell">Date</th>
+                <th class="location-cell">Location</th>
+                <th class="registered-cell">Registered</th>
+                <th class="slots-cell">Available Slots</th>
+                <th class="status-cell">Status</th>
+                <th class="actions-cell">Actions</th>
             </tr>
         </thead>
 
         <tbody>
             {% for camp in camps %}
             <tr>
-                <td>{{ camp.id }}</td>
+                <td class="id-cell">{{ camp.id }}</td>
 
-                <td>{{ camp.name }}</td>
+                <td class="name-cell">{{ camp.name }}</td>
 
-                <td>{{ camp.date }}</td>
+                <td class="date-cell">{{ camp.date }}</td>
 
-                <td>{{ camp.location }}</td>
+                <td class="location-cell">{{ camp.location }}</td>
 
-                <td>{{ camp.registrations|length }}</td>
+                <td class="registered-cell">{{ camp.registrations|length }}</td>
 
-                <td>{{ camp.available_slots }}</td>
+                <td class="slots-cell">{{ camp.available_slots }}</td>
 
-                <td>
+                <td class="status-cell">
                     <span class="status-badge status-{{ camp.status }}">
                         {{ camp.status|capitalize }}
                     </span>
                 </td>
 
-                <td class="action-buttons">
+                <td class="action-buttons actions-cell">
 
                     <a
                         class="edit-button"
