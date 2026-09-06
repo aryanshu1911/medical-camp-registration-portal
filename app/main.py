@@ -469,13 +469,13 @@ def add_camp(
             status_code=400,
             detail="Camp date cannot be empty."
         )
-        try:
-            datetime.strptime(date, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Camp date must be in YYYY-MM-DD format."
-            )
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp date must be in YYYY-MM-DD format."
+        )
 
     if not location:
         raise HTTPException(
@@ -584,13 +584,13 @@ def edit_camp(
             status_code=400,
             detail="Camp date cannot be empty."
         )
-        try:
-            datetime.strptime(date, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Camp date must be in YYYY-MM-DD format."
-            )
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp date must be in YYYY-MM-DD format."
+        )
 
     if not location:
         raise HTTPException(
