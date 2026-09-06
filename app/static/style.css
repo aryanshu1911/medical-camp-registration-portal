@@ -155,6 +155,41 @@ hr {
     opacity: 0.9;
 }
 
+.admin-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 0 0 28px;
+    padding: 0 0 14px;
+    border-bottom: 1px solid #cbd5e1;
+}
+
+.admin-nav a {
+    color: #1e3a8a;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.admin-nav a:hover {
+    text-decoration: underline;
+}
+
+.admin-nav a:last-child {
+    margin-left: auto;
+    color: #b91c1c;
+}
+
+.camp-unavailable {
+    display: block;
+    width: fit-content;
+    margin: auto auto 0;
+    padding: 10px 16px;
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
 @media (max-width: 800px) {
     .camp-grid {
         grid-template-columns: 1fr;
@@ -416,4 +451,31 @@ hr {
 .action-buttons form {
     margin: 0;
     max-width: none;
+}
+
+/* Camp management table */
+.camp-management-table th:last-child,
+.camp-management-table td:last-child {
+    width: 390px;
+    min-width: 390px;
+}
+
+.camp-management-table .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.camp-management-table .action-buttons form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.camp-management-table .action-buttons a,
+.camp-management-table .action-buttons button {
+    display: inline-block;
+    margin: 0;
+    white-space: nowrap;
 }

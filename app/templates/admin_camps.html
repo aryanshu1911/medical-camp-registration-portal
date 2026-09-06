@@ -6,6 +6,20 @@
 
 <h1>Manage Medical Camps</h1>
 
+<nav class="admin-nav" aria-label="Admin navigation">
+    <a href="/admin/camps">Manage Camps</a>
+    <a href="/admin/registrations">Manage Registrations</a>
+    <a href="/admin/logout">Logout</a>
+</nav>
+
+{% if success %}
+    <p><strong>{{ success }}</strong></p>
+{% endif %}
+
+{% if error %}
+    <p><strong>{{ error }}</strong></p>
+{% endif %}
+
 <p>
     <a class="button" href="/admin/camps/new">
         Add New Camp
@@ -15,9 +29,7 @@
 {% if camps %}
 
 <div class="table-container">
-
-    <table class="registrations-table">
-
+    <table class="registrations-table camp-management-table">
         <thead>
             <tr>
                 <th>ID</th>
@@ -31,11 +43,8 @@
         </thead>
 
         <tbody>
-
             {% for camp in camps %}
-
             <tr>
-
                 <td>{{ camp.id }}</td>
 
                 <td>{{ camp.name }}</td>
@@ -63,55 +72,87 @@
 
                     {% if camp.status == "scheduled" %}
 
-                    <form
-                        method="post"
-                        action="/admin/camps/{{ camp.id }}/status"
-                    >
-                        <input
-                            type="hidden"
-                            name="status"
-                            value="cancelled"
+                        <form
+                            method="post"
+                            action="/admin/camps/{{ camp.id }}/status"
                         >
-                        <button
-                            type="submit"
-                            class="delete-button"
-                            onclick="return confirm('Cancel this medical camp?');"
+                            <input
+                                type="hidden"
+                                name="status"
+                                value="completed"
+                            >
+
+                            <button
+                                type="submit"
+                                class="edit-button"
+                            >
+                                Complete
+                            </button>
+                        </form>
+
+                        <form
+                            method="post"
+                            action="/admin/camps/{{ camp.id }}/status"
                         >
-                            Cancel
-                        </button>
-                    </form>
+                            <input
+                                type="hidden"
+                                name="status"
+                                value="cancelled"
+                            >
+
+                            <button
+                                type="submit"
+                                class="delete-button"
+                                onclick="return confirm('Cancel this medical camp?');"
+                            >
+                                Cancel
+                            </button>
+                        </form>
 
                     {% elif camp.status == "cancelled" %}
 
-                    <form
-                        method="post"
-                        action="/admin/camps/{{ camp.id }}/status"
-                    >
-                        <input
-                            type="hidden"
-                            name="status"
-                            value="scheduled"
+                        <form
+                            method="post"
+                            action="/admin/camps/{{ camp.id }}/status"
                         >
-                        <button
-                            type="submit"
-                            class="edit-button"
-                        >
-                            Reopen
-                        </button>
-                    </form>
+                            <input
+                                type="hidden"
+                                name="status"
+                                value="scheduled"
+                            >
+
+                            <button
+                                type="submit"
+                                class="edit-button"
+                            >
+                                Reopen
+                            </button>
+                        </form>
+
+                    {% elif camp.status == "completed" %}
+
+                        <span>Completed</span>
 
                     {% endif %}
 
+                    <form
+                        method="post"
+                        action="/admin/camps/{{ camp.id }}/delete"
+                    >
+                        <button
+                            type="submit"
+                            class="delete-button"
+                            onclick="return confirm('Delete this medical camp? This cannot be undone.');"
+                        >
+                            Delete
+                        </button>
+                    </form>
+
                 </td>
-
             </tr>
-
             {% endfor %}
-
         </tbody>
-
     </table>
-
 </div>
 
 {% else %}

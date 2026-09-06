@@ -1,3 +1,6 @@
+import os
+from datetime import datetime
+
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -24,9 +27,14 @@ app.mount(
 
 
 # Session middleware
+SESSION_SECRET = os.getenv(
+    "SESSION_SECRET",
+    "medical-camp-development-secret"
+)
+
 app.add_middleware(
     SessionMiddleware,
-    secret_key="medical-camp-development-secret"
+    secret_key=SESSION_SECRET
 )
 
 
@@ -116,7 +124,14 @@ def registration(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    camps = db.query(Camp).all()
+    camps = (
+        db.query(Camp)
+        .filter(
+            Camp.status == "scheduled",
+            Camp.available_slots > 0
+        )
+        .all()
+    )
 
     error = request.session.pop("error", None)
     form_data = request.session.pop("form_data", {})
@@ -159,7 +174,6 @@ def submit_registration(
         request.session["form_data"] = {
             "name": name,
             "age": age,
-            "contact_number": contact_number,
             "camp_id": camp_id
         }
 
@@ -175,7 +189,6 @@ def submit_registration(
         request.session["form_data"] = {
             "name": name,
             "age": age,
-            "contact_number": contact_number,
             "camp_id": camp_id
         }
 
@@ -185,6 +198,8 @@ def submit_registration(
         )
 
     # Validate contact number
+    contact_number = contact_number.strip()
+
     if not contact_number.isdigit() or len(contact_number) != 10:
         request.session["error"] = (
             "Contact number must contain exactly 10 digits."
@@ -193,7 +208,6 @@ def submit_registration(
         request.session["form_data"] = {
             "name": name,
             "age": age,
-            "contact_number": contact_number,
             "camp_id": camp_id
         }
 
@@ -217,7 +231,40 @@ def submit_registration(
         request.session["form_data"] = {
             "name": name,
             "age": age,
-            "contact_number": contact_number,
+            "camp_id": camp_id
+        }
+
+        return RedirectResponse(
+            url="/registration",
+            status_code=303
+        )
+
+    # Registration is allowed only for scheduled camps
+    if camp.status != "scheduled":
+        request.session["error"] = (
+            "Registration is not available for this medical camp."
+        )
+
+        request.session["form_data"] = {
+            "name": name,
+            "age": age,
+            "camp_id": camp_id
+        }
+
+        return RedirectResponse(
+            url="/registration",
+            status_code=303
+        )
+
+    # Check camp capacity
+    if camp.available_slots <= 0:
+        request.session["error"] = (
+            "This medical camp is fully booked."
+        )
+
+        request.session["form_data"] = {
+            "name": name,
+            "age": age,
             "camp_id": camp_id
         }
 
@@ -234,9 +281,31 @@ def submit_registration(
         camp_id=camp_id
     )
 
+    # Consume one available slot
+    camp.available_slots -= 1
+
     db.add(registration)
-    db.commit()
-    db.refresh(registration)
+
+    try:
+        db.commit()
+        db.refresh(registration)
+    except Exception:
+        db.rollback()
+
+        request.session["error"] = (
+            "Registration could not be completed. Please try again."
+        )
+
+        request.session["form_data"] = {
+            "name": name,
+            "age": age,
+            "camp_id": camp_id
+        }
+
+        return RedirectResponse(
+            url="/registration",
+            status_code=303
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -260,12 +329,27 @@ def contact(request: Request):
 # Admin Authentication
 # =========================
 
+@app.get("/admin")
+def admin_home(
+    request: Request,
+    admin: AdminUser = Depends(require_admin)
+):
+    return RedirectResponse(
+        url="/admin/camps",
+        status_code=303
+    )
+
+
 @app.get("/admin/login")
 def admin_login(request: Request):
+    error = request.session.pop("admin_login_error", None)
+
     return templates.TemplateResponse(
         request=request,
         name="admin_login.html",
-        context={}
+        context={
+            "error": error
+        }
     )
 
 
@@ -301,7 +385,17 @@ def admin_login_submit(
     request.session["admin_user_id"] = admin.id
 
     return RedirectResponse(
-        url="/admin/registrations",
+        url="/admin/camps",
+        status_code=303
+    )
+
+
+@app.get("/admin/logout")
+def admin_logout(request: Request):
+    request.session.clear()
+
+    return RedirectResponse(
+        url="/admin/login",
         status_code=303
     )
 
@@ -309,6 +403,32 @@ def admin_login_submit(
 # =========================
 # Protected Admin Routes
 # =========================
+
+@app.get("/admin/camps")
+def admin_camps(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(require_admin)
+):
+    camps = (
+        db.query(Camp)
+        .order_by(Camp.id)
+        .all()
+    )
+
+    success = request.session.pop("admin_success", None)
+    error = request.session.pop("admin_error", None)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_camps.html",
+        context={
+            "camps": camps,
+            "success": success,
+            "error": error
+        }
+    )
+
 
 @app.get("/admin/camps/new")
 def add_camp_form(
@@ -334,6 +454,7 @@ def add_camp(
     admin: AdminUser = Depends(require_admin)
 ):
     name = name.strip()
+    date = date.strip()
     location = location.strip()
     description = description.strip()
 
@@ -342,6 +463,19 @@ def add_camp(
             status_code=400,
             detail="Camp name cannot be empty."
         )
+
+    if not date:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp date cannot be empty."
+        )
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Camp date must be in YYYY-MM-DD format."
+            )
 
     if not location:
         raise HTTPException(
@@ -367,28 +501,228 @@ def add_camp(
     db.add(camp)
     db.commit()
 
+    request.session["admin_success"] = "Medical camp created successfully."
+
     return RedirectResponse(
         url="/admin/camps",
         status_code=303
     )
 
 
-@app.get("/admin/camps")
-def admin_camps(
+@app.get("/admin/camps/{camp_id}/edit")
+def edit_camp_form(
+    camp_id: int,
     request: Request,
     db: Session = Depends(get_db),
     admin: AdminUser = Depends(require_admin)
 ):
-    camps = db.query(Camp).all()
+    camp = (
+        db.query(Camp)
+        .filter(Camp.id == camp_id)
+        .first()
+    )
+
+    if not camp:
+        raise HTTPException(
+            status_code=404,
+            detail="Medical camp not found."
+        )
+
+    registration_count = (
+        db.query(Registration)
+        .filter(Registration.camp_id == camp.id)
+        .count()
+    )
 
     return templates.TemplateResponse(
         request=request,
-        name="admin_camps.html",
+        name="admin_edit_camp.html",
         context={
-            "camps": camps
+            "camp": camp,
+            "registration_count": registration_count
         }
     )
 
+
+@app.post("/admin/camps/{camp_id}/edit")
+def edit_camp(
+    camp_id: int,
+    request: Request,
+    name: str = Form(...),
+    date: str = Form(...),
+    location: str = Form(...),
+    description: str = Form(""),
+    available_slots: int = Form(...),
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(require_admin)
+):
+    camp = (
+        db.query(Camp)
+        .filter(Camp.id == camp_id)
+        .first()
+    )
+
+    if not camp:
+        raise HTTPException(
+            status_code=404,
+            detail="Medical camp not found."
+        )
+
+    name = name.strip()
+    date = date.strip()
+    location = location.strip()
+    description = description.strip()
+
+    if not name:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp name cannot be empty."
+        )
+
+    if not date:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp date cannot be empty."
+        )
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Camp date must be in YYYY-MM-DD format."
+            )
+
+    if not location:
+        raise HTTPException(
+            status_code=400,
+            detail="Camp location cannot be empty."
+        )
+
+    if available_slots < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Available slots cannot be negative."
+        )
+
+    camp.name = name
+    camp.date = date
+    camp.location = location
+    camp.description = description
+    camp.available_slots = available_slots
+
+    db.commit()
+
+    request.session["admin_success"] = "Medical camp updated successfully."
+
+    return RedirectResponse(
+        url="/admin/camps",
+        status_code=303
+    )
+
+
+@app.post("/admin/camps/{camp_id}/status")
+def update_camp_status(
+    camp_id: int,
+    status: str = Form(...),
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(require_admin)
+):
+    camp = (
+        db.query(Camp)
+        .filter(Camp.id == camp_id)
+        .first()
+    )
+
+    if not camp:
+        raise HTTPException(
+            status_code=404,
+            detail="Medical camp not found."
+        )
+
+    allowed_statuses = {
+        "scheduled",
+        "cancelled",
+        "completed"
+    }
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid camp status."
+        )
+
+    # Do not reopen a completed camp through the simple status action.
+    if camp.status == "completed" and status != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="A completed camp cannot be reopened or cancelled."
+        )
+
+    # A scheduled camp can be cancelled or completed.
+    # A cancelled camp can be reopened.
+    camp.status = status
+
+    db.commit()
+
+    return RedirectResponse(
+        url="/admin/camps",
+        status_code=303
+    )
+
+
+@app.post("/admin/camps/{camp_id}/delete")
+def delete_camp(
+    camp_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: AdminUser = Depends(require_admin)
+):
+    camp = (
+        db.query(Camp)
+        .filter(Camp.id == camp_id)
+        .first()
+    )
+
+    if not camp:
+        request.session["admin_error"] = "Medical camp not found."
+
+        return RedirectResponse(
+            url="/admin/camps",
+            status_code=303
+        )
+
+    registration_count = (
+        db.query(Registration)
+        .filter(Registration.camp_id == camp.id)
+        .count()
+    )
+
+    if registration_count > 0:
+        request.session["admin_error"] = (
+            "This camp cannot be deleted because it has registrations."
+        )
+
+        return RedirectResponse(
+            url="/admin/camps",
+            status_code=303
+        )
+
+    db.delete(camp)
+    db.commit()
+
+    request.session["admin_success"] = (
+        "Medical camp deleted successfully."
+    )
+
+    return RedirectResponse(
+        url="/admin/camps",
+        status_code=303
+    )
+
+
+# =========================
+# Admin Registration Routes
+# =========================
 
 @app.get("/admin/registrations")
 def admin_registrations(
@@ -396,13 +730,22 @@ def admin_registrations(
     db: Session = Depends(get_db),
     admin: AdminUser = Depends(require_admin)
 ):
-    registrations = db.query(Registration).all()
+    registrations = (
+        db.query(Registration)
+        .order_by(Registration.id)
+        .all()
+    )
+
+    success = request.session.pop("admin_success", None)
+    error = request.session.pop("admin_error", None)
 
     return templates.TemplateResponse(
         request=request,
         name="admin_registrations.html",
         context={
-            "registrations": registrations
+            "registrations": registrations,
+            "success": success,
+            "error": error
         }
     )
 
@@ -410,6 +753,7 @@ def admin_registrations(
 @app.post("/admin/registrations/{registration_id}/delete")
 def delete_registration(
     registration_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     admin: AdminUser = Depends(require_admin)
 ):
@@ -420,13 +764,44 @@ def delete_registration(
     )
 
     if not registration:
+        request.session["admin_error"] = (
+            "Registration not found."
+        )
+
         return RedirectResponse(
             url="/admin/registrations",
             status_code=303
         )
 
+    camp = (
+        db.query(Camp)
+        .filter(Camp.id == registration.camp_id)
+        .first()
+    )
+
+    # Restore the consumed slot.
+    if camp:
+        camp.available_slots += 1
+
     db.delete(registration)
-    db.commit()
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+
+        request.session["admin_error"] = (
+            "Registration could not be deleted."
+        )
+
+        return RedirectResponse(
+            url="/admin/registrations",
+            status_code=303
+        )
+
+    request.session["admin_success"] = (
+        "Registration deleted successfully."
+    )
 
     return RedirectResponse(
         url="/admin/registrations",
@@ -482,17 +857,98 @@ def update_registration(
     )
 
     if not registration:
-        return RedirectResponse(
-            url="/admin/registrations",
-            status_code=303
+        raise HTTPException(
+            status_code=404,
+            detail="Registration not found."
         )
 
-    registration.name = name.strip()
-    registration.age = age
-    registration.contact_number = contact_number.strip()
-    registration.camp_id = camp_id
+    # Validate participant details
+    name = name.strip()
+    contact_number = contact_number.strip()
 
-    db.commit()
+    if not name:
+        raise HTTPException(
+            status_code=400,
+            detail="Name cannot be empty."
+        )
+
+    if age < 1 or age > 120:
+        raise HTTPException(
+            status_code=400,
+            detail="Age must be between 1 and 120."
+        )
+
+    if not contact_number.isdigit() or len(contact_number) != 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Contact number must contain exactly 10 digits."
+        )
+
+    # Find destination camp
+    new_camp = (
+        db.query(Camp)
+        .filter(Camp.id == camp_id)
+        .first()
+    )
+
+    if not new_camp:
+        raise HTTPException(
+            status_code=404,
+            detail="Selected medical camp does not exist."
+        )
+
+    old_camp = (
+        db.query(Camp)
+        .filter(Camp.id == registration.camp_id)
+        .first()
+    )
+
+    # If the camp itself is not changing, only update participant data.
+    if registration.camp_id == camp_id:
+
+        # Keep the registration valid even if the camp has since
+        # become cancelled/completed; changing participant details
+        # does not create a new registration.
+        registration.name = name
+        registration.age = age
+        registration.contact_number = contact_number
+
+    else:
+
+        # Destination must accept registrations.
+        if new_camp.status != "scheduled":
+            raise HTTPException(
+                status_code=400,
+                detail="The selected medical camp is not accepting registrations."
+            )
+
+        if new_camp.available_slots <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="The selected medical camp is fully booked."
+            )
+
+        # Restore the slot consumed by the old camp.
+        if old_camp:
+            old_camp.available_slots += 1
+
+        # Consume one slot in the new camp.
+        new_camp.available_slots -= 1
+
+        registration.camp_id = camp_id
+        registration.name = name
+        registration.age = age
+        registration.contact_number = contact_number
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Registration could not be updated."
+        )
 
     return RedirectResponse(
         url="/admin/registrations",

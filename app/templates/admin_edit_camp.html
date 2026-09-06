@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Medical Camp{% endblock %}
+
+{% block content %}
+
+<h1>Edit Medical Camp</h1>
+
+<form method="post" action="/admin/camps/{{ camp.id }}/edit">
+
+    <div>
+        <label for="name">Camp Name</label>
+
+        <input
+            type="text"
+            id="name"
+            name="name"
+            maxlength="150"
+            value="{{ camp.name }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="date">Date</label>
+
+        <input
+            type="date"
+            id="date"
+            name="date"
+            value="{{ camp.date }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="location">Location</label>
+
+        <input
+            type="text"
+            id="location"
+            name="location"
+            maxlength="200"
+            value="{{ camp.location }}"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="description">Description</label>
+
+        <textarea
+            id="description"
+            name="description"
+            rows="4"
+        >{{ camp.description or "" }}</textarea>
+    </div>
+
+    <div>
+        <label for="available_slots">Available Slots</label>
+
+        <input
+            type="number"
+            id="available_slots"
+            name="available_slots"
+            min="0"
+            value="{{ camp.available_slots }}"
+            required
+        >
+    </div>
+
+    <p>
+        Current registrations:
+        <strong>{{ registration_count }}</strong>
+    </p>
+
+    <button type="submit">
+        Save Changes
+    </button>
+
+</form>
+
+<p>
+    <a href="/admin/camps">Back to Manage Camps</a>
+</p>
+
+{% endblock %}
