@@ -60,11 +60,7 @@ medical-camp-portal/
    ```shell
    pip install -r requirements.txt
    ```
-4. Create an admin account
-   ```shell
-   python create_admin.py
-   ```
-5. Start the application
+4. Start the application
    ```shell
    uvicorn app.main:app --reload
    ```
@@ -74,10 +70,16 @@ http://127.0.0.1:8000
 
 ## Admin Access
 
-Use the following demo credentials to access the admin panel:
+The included database contains a demo admin account.
 
 **Username:** `admin`
 **Password:** `admin123`
+
+To create an additional admin account, run:
+
+```shell
+python create_admin.py
+```
 
 Admin login:
 
